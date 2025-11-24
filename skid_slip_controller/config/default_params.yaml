@@ -1,0 +1,103 @@
+# Default configuration for adaptive skid-slip controller
+# Tuned for hydraulic differential drive lawn mowers
+
+adaptive_controller:
+  ros__parameters:
+
+    # Update rate for control loop (Hz)
+    # Recommendation: 20-50 Hz for hydraulic systems
+    update_rate: 20.0
+
+    # Slip detection threshold
+    # When filtered slip exceeds this value, controller becomes more conservative
+    # Range: 0.0 (no slip) to 1.0 (complete slip)
+    # Typical: 0.15-0.25 for grass, 0.3-0.4 for mud
+    slip_threshold: 0.2
+
+    # Enable adaptive control
+    # If false, controller acts as pass-through
+    enable_adaptation: true
+
+    # Surface classification period (control cycles)
+    # Surface classification is computationally expensive
+    # At 20 Hz update rate, period of 20 = 1 Hz classification rate
+    # Recommendation: 10-40 cycles (0.5-2 Hz classification rate)
+    surface_classify_period: 20
+
+    # Minimum turn radius constraint (meters)
+    # Prevents sharp turns that cause excessive skidding
+    # Depends on wheelbase and tire characteristics
+    # Typical: 0.5-1.0m for small mowers, 1.0-2.0m for large commercial mowers
+    min_turn_radius: 0.5
+
+    # Velocity-dependent turn radius
+    # If true, minimum radius increases with velocity
+    # Recommended: true for safety on slippery surfaces
+    velocity_dependent_radius: true
+
+    # Velocity scale for turn radius (s)
+    # Additional radius per m/s of velocity
+    # effective_radius = min_radius + velocity_scale * |v_linear|
+    # Typical: 0.5-2.0 for cautious behavior, 0.0-0.5 for aggressive
+    velocity_scale: 1.0
+
+    # Slip detector parameters
+    slip_detector:
+      # Minimum velocity threshold (m/s)
+      # Below this, slip is not computed (too noisy at low speeds)
+      velocity_threshold: 0.01
+
+      # Moving average filter window size
+      # Smooths slip estimates over time
+      # Larger = smoother but slower response
+      # Typical: 5-20 samples
+      filter_window_size: 10
+
+      # Confidence velocity scale (m/s)
+      # Velocity at which slip confidence reaches 1.0
+      # confidence = min(1.0, avg_velocity / confidence_velocity_scale)
+      # Typical: 0.3-0.8 m/s
+      confidence_velocity_scale: 0.5
+
+    # Surface classifier parameters
+    surface_classifier:
+      # Note: Surface parameters are hardcoded in the classifier
+      # You can modify them in src/surface_classifier.cpp
+      #
+      # Current surface types and their parameters:
+      #
+      # DRY_CONCRETE:
+      #   friction_coeff: 0.8
+      #   max_acceleration: 1.0 m/s²
+      #   min_turn_radius: 0.3 m
+      #   max_velocity: 1.5 m/s
+      #
+      # DRY_GRASS:
+      #   friction_coeff: 0.6
+      #   max_acceleration: 0.5 m/s²
+      #   min_turn_radius: 0.5 m
+      #   max_velocity: 0.8 m/s
+      #
+      # WET_GRASS:
+      #   friction_coeff: 0.4
+      #   max_acceleration: 0.3 m/s²
+      #   min_turn_radius: 0.8 m
+      #   max_velocity: 0.5 m/s
+      #
+      # MUD:
+      #   friction_coeff: 0.2
+      #   max_acceleration: 0.2 m/s²
+      #   min_turn_radius: 1.2 m
+      #   max_velocity: 0.3 m/s
+
+      # Surface classification uses these sensor thresholds:
+      # - slip_ratio from slip detector
+      # - motor_current_avg from hydraulic system
+      # - vibration_level from IMU acceleration magnitude
+      # - velocity_tracking_error from commanded vs actual velocity
+
+      # To tune for your mower:
+      # 1. Record sensor data on different surfaces
+      # 2. Analyze slip ratios, currents, and vibrations
+      # 3. Adjust thresholds in src/surface_classifier.cpp::classify()
+      enabled: true
